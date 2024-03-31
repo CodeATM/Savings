@@ -4,7 +4,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     const customer_email = window.localStorage.getItem('customer_email');
   
     const subscriptions = await fetch(
-      `http://localhost:8000/payment/subscription?customer=${customer_id}`
+      `/payment/subscription?customer=${customer_id}`
     ).then((res) => res.json());
     let subscription = subscriptions[0];
   
@@ -36,7 +36,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       }" target="_blank"> Manage subscription </a><br />
       `;
     } else {
-      const plans = await fetch('http://localhost:8000/payment/plans', {
+      const plans = await fetch(`/payment/plans`, {
         method: 'get',
       })
         .then((res) => res.json())
@@ -87,7 +87,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       
       const customerCode = getCookie('customer');
       console.log(customerCode);
-    let { authorization_url } = await fetch('http://localhost:8000/payment/create-subscription', {
+    let { authorization_url } = await fetch('/payment/create-subscription', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

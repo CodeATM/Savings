@@ -18,7 +18,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       const customerCode = getCookie('customer');
       console.log(customerCode);
 
-      let { authorization_url }  = await fetch("http://localhost:8000/payment/initial-payment", {
+      let { authorization_url }  = await fetch("/payment/initial-payment", {
         method: "post",
         headers: {
           "Content-Type": "application/json",

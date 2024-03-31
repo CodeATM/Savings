@@ -14,7 +14,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       const nextofkinPhone = document.getElementById("nextofkinPhone").value;
       console.log({email,firstname, lastname, phone, address, dob, nextofkin, nextofkinPhone})
 
-      const customer = await fetch("http://localhost:8000/payment/create-customer", {
+      const customer = await fetch("/payment/create-customer", {
         method: "post",
         headers: {
           "Content-Type": "application/json",
