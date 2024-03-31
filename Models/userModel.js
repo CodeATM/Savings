@@ -45,6 +45,10 @@ const userSchema = new mongoose.Schema({
   },
   customerId: {
     type: String
+  },
+  paidRegFee: {
+    type: Boolean,
+    default: false
   }
 });
 

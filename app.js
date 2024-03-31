@@ -7,6 +7,16 @@ const PORT = 8000;
 require("dotenv").config();
 const AppError = require("./utils/ErrorHandler");
 const globalErrorHandler = require("./Controllers/ErrorController");
+const { resolve } = require('path');
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(process.env.STATIC_DIR));
+
+app.get('/', async (req, res) => {
+  const path = resolve(process.env.STATIC_DIR + '/register.html');
+  res.sendFile(path);
+});
 
 app.use(
   cors({
@@ -14,8 +24,6 @@ app.use(
     credentials: true,
   }),
 );
-app.use(express.json({ limit: "10kb" }));
-app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
 mongoose
   .connect(process.env.MONGODB_URL, {
@@ -25,9 +33,9 @@ mongoose
   .then(() => console.log(`databse connected`));
 
 
-app.get("/", (req, res, next) => {
-  res.json({ message: "Hello, welcome to AJO's Api" });
-});
+// app.get("/", (req, res, next) => {
+//   res.json({ message: "Hello, welcome to AJO's Api" });
+// });
 
 app.use("/user", require("./routes/userRoutes"));
 app.use("/payment", require("./routes/paymentRoutes"));
