@@ -4,7 +4,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     const customer_email = window.localStorage.getItem('customer_email');
   
     const subscriptions = await fetch(
-      `/subscription?customer=${customer_id}`
+      `http://localhost:8000/payment/subscription?customer=${customer_id}`
     ).then((res) => res.json());
     let subscription = subscriptions[0];
   
@@ -31,7 +31,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         Next payment date: ${new Date(subscription.next_payment_date)}
       </p>
     
-      <a href="/update-payment-method?subscription_code=${
+      <a href="http://localhost:8000/payment/update-payment-method?subscription_code=${
         subscription.subscription_code
       }" target="_blank"> Manage subscription </a><br />
       `;
@@ -74,14 +74,26 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
   
   async function signUpForPlan(plan_code) {
-    let email = window.localStorage.getItem('customer_email');
-    let { authorization_url } = await fetch('/initialize-transaction-with-plan', {
+    function getCookie(name) {
+        const cookies = document.cookie.split('; ');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].split('=');
+          if (cookie[0] === name) {
+            return cookie[1];
+          }
+        }
+        return null;
+      }
+      
+      const customerCode = getCookie('customer');
+      console.log(customerCode);
+    let { authorization_url } = await fetch('http://localhost:8000/payment/create-subscription', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email,
+        customerCode,
         amount: 50000,
         plan: plan_code,
       }),

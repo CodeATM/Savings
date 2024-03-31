@@ -5,7 +5,9 @@ const {
   createCustomer,
   subscribe,
   initialPayment,
-  getPlans
+  getPlans,
+  userSubscription,
+  updatePayment
 } = require("../Controllers/Payment");
 
 // Authentication Routes
@@ -13,10 +15,12 @@ router.post("/create-customer", createCustomer);
 router.post("/create-subscription", subscribe);
 router.post("/initial-payment", initialPayment);
 router.get('/plans', getPlans)
+router.get('/subscription', userSubscription)
+router.get('/update-payment-method',  updatePayment)
 
 router.post("/webhook", async (req, res) => {
   const hash = crypto
-    .createHmac("sha512", secret)
+    .createHmac("sha512", process.env.paystack_secret_key)
     .update(JSON.stringify(req.body))
     .digest("hex");
   if (hash == req.headers["x-paystack-signature"]) {

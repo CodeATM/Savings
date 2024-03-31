@@ -19,6 +19,9 @@ const createCustomer = async (req, res) => {
 
     let createCustomerResponse = await paystack.customer.create({
       email,
+      first_name: firstname,
+      last_name: lastname,
+      phone: phone
     });
 
     if (createCustomerResponse.status === false) {
@@ -46,36 +49,36 @@ const createCustomer = async (req, res) => {
   }
 };
 
-const subscribe = async (req, res) => {
-  try {
-    let { email, amount, plan } = req.body;
+// const subscribe = async (req, res) => {
+//   try {
+//     let { email, amount, plan } = req.body;
 
-    if (!email || !amount || !plan) {
-      throw Error(
-        'Please provide a valid customer email, amount to charge, and plan code'
-      );
-    }
+//     if (!email || !amount || !plan) {
+//       throw Error(
+//         'Please provide a valid customer email, amount to charge, and plan code'
+//       );
+//     }
 
-    let initializeTransactionResponse = await paystack.transaction.initialize({
-      email,
-      amount,
-      plan,
-      channels: ['card'], // limiting the checkout to show card, as it's the only channel that subscriptions are currently available through
-      callback_url: `${process.env.SERVER_URL}/account.html`,
-    });
+//     let initializeTransactionResponse = await paystack.transaction.initialize({
+//       email,
+//       amount,
+//       plan,
+//       channels: ['card'], // limiting the checkout to show card, as it's the only channel that subscriptions are currently available through
+//       callback_url: `${process.env.SERVER_URL}/account.html`,
+//     });
 
-    if (initializeTransactionResponse.status === false) {
-      return console.log(
-        'Error initializing transaction: ',
-        initializeTransactionResponse.message
-      );
-    }
-    let transaction = initializeTransactionResponse.data;
-    return res.status(200).send(transaction);
-  } catch (error) {
-    return res.status(400).send(error.message);
-  }
-};
+//     if (initializeTransactionResponse.status === false) {
+//       return console.log(
+//         'Error initializing transaction: ',
+//         initializeTransactionResponse.message
+//       );
+//     }
+//     let transaction = initializeTransactionResponse.data;
+//     return res.status(200).send(transaction);
+//   } catch (error) {
+//     return res.status(400).send(error.message);
+//   }
+// };
 
 
 
@@ -129,9 +132,103 @@ const getPlans =  async (req, res) => {
   return res.status(200).send(fetchPlansResponse.data);
 };
 
+
+const subscribe = async (req, res) => {
+  try {
+    let { customerCode, amount, plan } = req.body;
+
+    const user = await User.findOne({customerCode: customerCode})
+    console.log(user)
+
+    if (!user) {
+      throw Error(
+        'Please provide a valid customer.'
+      );
+    }
+
+    let initializeTransactionResponse = await paystack.transaction.initialize({
+      email: user.email,
+      amount,
+      plan,
+      channels: ['card'], // limiting the checkout to show card, as it's the only channel that subscriptions are currently available through
+      callback_url: `${process.env.SERVER_URL}/account.html`,
+    });
+
+    if (initializeTransactionResponse.status === false) {
+      return console.log(
+        'Error initializing transaction: ',
+        initializeTransactionResponse.message
+      );
+    }
+    let transaction = initializeTransactionResponse.data;
+    return res.status(200).send(transaction);
+  } catch (error) {
+    return res.status(400).send(error.message);
+  }
+};
+
+
+const userSubscription = async (req, res) => {
+  try {
+    let { customer } = req.query;
+
+    if (!customer) {
+      throw Error('Please include a valid customer ID');
+    }
+
+    let fetchSubscriptionsResponse = await paystack.subscription.list({
+      customer,
+    });
+
+    if (fetchSubscriptionsResponse.status === false) {
+      console.log(
+        'Error fetching subscriptions: ',
+        fetchSubscriptionsResponse.message
+      );
+      return res
+        .status(400)
+        .send(
+          `Error fetching subscriptions: ${fetchSubscriptionsResponse.message}`
+        );
+    }
+
+    let subscriptions = fetchSubscriptionsResponse.data.filter(
+      (subscription) =>
+        subscription.status === 'active' ||
+        subscription.status === 'non-renewing'
+    );
+
+    return res.status(200).send(subscriptions);
+  } catch (error) {
+    console.log(error);
+    return res.status(400).send(error.message);
+  }
+};
+
+
+const updatePayment =  async (req, res) => {
+  try {
+    const { subscription_code } = req.query;
+    const manageSubscriptionLinkResponse =
+      await paystack.subscription.manageLink({
+        code: subscription_code,
+      });
+    if (manageSubscriptionLinkResponse.status === false) {
+      console.log(manageSubscriptionLinkResponse.message);
+    }
+
+    let manageSubscriptionLink = manageSubscriptionLinkResponse.data.link;
+    return res.redirect(manageSubscriptionLink);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 module.exports = {
   createCustomer,
   subscribe,
   initialPayment,
-  getPlans
+  getPlans,
+  userSubscription,
+  updatePayment
 };
