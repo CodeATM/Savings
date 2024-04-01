@@ -48,7 +48,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   
       let selectPlanDiv = document.createElement('div');
       selectPlanDiv.style.display = 'flex';
-      selectPlanDiv.style.flexDirection = 'row';
+      selectPlanDiv.style.flexWrap = 'wrap';
   
       plans.forEach((plan) => {
         let planDiv = document.createElement('div');
