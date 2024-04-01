@@ -11,7 +11,7 @@ const { resolve } = require('path');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(__dirname + process.env.STATIC_DIR));
+app.use(express.static(process.env.STATIC_DIR));
 
 app.get('/', async (req, res) => {
   const path = resolve(process.env.STATIC_DIR + '/register.html');
