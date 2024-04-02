@@ -213,9 +213,9 @@ const initialPayment = async (req, res) => {
        "reference": "ln2rq546p4"
     }   
     
-    Which i will have to use in the brower to complete the payment plus my browser
+    Which i will have to use in the brower to complete the payment
 
-    Note: i want to make sure the frist transaction goes throuth but the only way is to use the web hook below to know 
+    Note: i want to make sure the first transaction goes through but the only way is to use the web hook below to know (handlewebhook function)
 
 */
 
