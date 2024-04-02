@@ -8,6 +8,8 @@ const crypto = require("crypto");
 
 const paystack = new Paystack(process.env.paystack_secret_key);
 
+let isPaid = false;
+
 const createCustomer = async (req, res) => {
   try {
     let {
@@ -110,7 +112,7 @@ const initialPayment = async (req, res) => {
 
     if (initializeTransactionResponse.status === false) {
       return console.log(
-        "Error initializing transaction: ",
+        "Error initializing transaction:",
         initializeTransactionResponse.message
       );
     }
@@ -234,6 +236,9 @@ const handleWebhook = (req, res) => {
     const event = req.body.event;
     if (event === "charge.success") {
       const transactionData = req.body.data;
+      if (transactionData.status == 'success') {
+        let isPaid = true
+      }
       console.log("Successful transaction:", transactionData);
     }
     res.status(200).end();
@@ -242,6 +247,8 @@ const handleWebhook = (req, res) => {
     res.status(400).end();
   }
 };
+
+
 module.exports = {
   createCustomer,
   subscribe,
