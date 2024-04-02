@@ -238,6 +238,7 @@ const handleWebhook = (req, res) => {
       const transactionData = req.body.data;
       if (transactionData.status == 'success') {
         let isPaid = true
+        console.log(isPaid)
       }
       console.log("Successful transaction:", transactionData);
     }
