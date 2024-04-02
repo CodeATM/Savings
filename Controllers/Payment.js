@@ -4,6 +4,7 @@ const AppError = require("../utils/ErrorHandler");
 const User = require("../Models/userModel");
 const Paystack = require("@paystack/paystack-sdk");
 // const User = require("../Models/userModel");
+const crypto = require('crypto');
 
 const paystack = new Paystack(process.env.paystack_secret_key);
 
