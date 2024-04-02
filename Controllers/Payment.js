@@ -61,6 +61,51 @@ const createCustomer = async (req, res) => {
   }
 };
 
+// const initialPayment = async (req, res) => {
+
+//   try {
+//     let { customerCode, amount, plan } = req.body;
+
+//     const user = await User.findOne({ customerCode: customerCode });
+//     console.log(user);
+
+//     if (!user) {
+//       throw Error("Please provide a valid customer.");
+//     }
+
+//     // subscribe
+//     let subscriptionRsponse = await paystack.transaction.initialize({
+//       email: user.email,
+//       amount,
+//       plan,
+//       channels: ["card"], // limiting the checkout to show card, as it's the only channel that subscriptions are currently available through
+//       callback_url: `${process.env.SERVER_URL}/account.html`,
+//     });
+//     let suscription = subscriptionRsponse.data
+//     res.status(200).send(suscription);
+
+//     // then checkout
+//     let initializeTransactionResponse = await paystack.transaction.initialize({
+//       email: user.email,
+//       amount: 15000 * 100,
+//       channels: ["card"], // limiting the checkout to show card, as it's the only channel that subscriptions are currently available through
+//       callback_url: `${process.env.SERVER_URL}/account.html`,
+//     });
+
+//     if (initializeTransactionResponse.status === false) {
+//       return console.log(
+//         "Error initializing transaction:",
+//         initializeTransactionResponse.message
+//       );
+//     }
+//     let transaction = initializeTransactionResponse.data;
+//     console.log(transaction);
+//     return res.status(200).send(transaction);
+//   } catch (error) {
+//     return res.status(400).send(error.message);
+//   }
+// };
+
 // const subscribe = async (req, res) => {
 //   try {
 //     let { email, amount, plan } = req.body;
@@ -92,9 +137,54 @@ const createCustomer = async (req, res) => {
 //   }
 // };
 
+// const initialPayment = async (req, res) => {
+//   try {
+//     let { customerCode } = req.body;
+
+//     const user = await User.findOne({ customerCode: customerCode });
+//     console.log(user);
+
+//     if (!user) {
+//       throw Error("Please provide a valid customer.");
+//     }
+
+//     let initializeTransactionResponse = await paystack.transaction.initialize({
+//       email: user.email,
+//       amount: 15000 * 100,
+//       channels: ["card"], // limiting the checkout to show card, as it's the only channel that subscriptions are currently available through
+//       callback_url: `${process.env.SERVER_URL}/account.html`,
+//     });
+
+//     if (initializeTransactionResponse.status === false) {
+//       return console.log(
+//         "Error initializing transaction:",
+//         initializeTransactionResponse.message
+//       );
+//     }
+//     let transaction = initializeTransactionResponse.data;
+//     console.log(transaction);
+//     return res.status(200).send(transaction);
+//   } catch (error) {
+//     return res.status(400).send(error.message);
+//   }
+// };
+
+const getPlans = async (req, res) => {
+  let fetchPlansResponse = await paystack.plan.list({});
+
+  if (fetchPlansResponse.status === false) {
+    console.log("Error fetching plans: ", fetchPlansResponse.message);
+    return res
+      .status(400)
+      .send(`Error fetching subscriptions: ${fetchPlansResponse.message}`);
+  }
+
+  return res.status(200).send(fetchPlansResponse.data);
+};
+
 const initialPayment = async (req, res) => {
   try {
-    let { customerCode } = req.body;
+    let { customerCode, amount, plan } = req.body;
 
     const user = await User.findOne({ customerCode: customerCode });
     console.log(user);
@@ -103,6 +193,33 @@ const initialPayment = async (req, res) => {
       throw Error("Please provide a valid customer.");
     }
 
+    // subscribe
+    let subscriptionRsponse = await paystack.transaction.initialize({
+      email: user.email,
+      amount,
+      plan,
+      channels: ["card"], // limiting the checkout to show card, as it's the only channel that subscriptions are currently available through
+      callback_url: `${process.env.SERVER_URL}/account.html`,
+    });
+
+    if (!subscriptionRsponse.status) {
+      // return whatever you want
+    }
+
+    /* ONce this part get executed it gives me a response like this
+    {
+      "authorization_url": "https://checkout.paystack.com/1mxj2x1g8l80x6r",
+       "access_code": "1mxj2x1g8l80x6r",
+       "reference": "ln2rq546p4"
+    }   
+    
+    Which i will have to use in the brower to complete the payment plus my browser
+
+    Note: i want to make sure the frist transaction goes throuth but the only way is to use the web hook below to know 
+
+*/
+
+    // then checkout
     let initializeTransactionResponse = await paystack.transaction.initialize({
       email: user.email,
       amount: 15000 * 100,
@@ -122,19 +239,6 @@ const initialPayment = async (req, res) => {
   } catch (error) {
     return res.status(400).send(error.message);
   }
-};
-
-const getPlans = async (req, res) => {
-  let fetchPlansResponse = await paystack.plan.list({});
-
-  if (fetchPlansResponse.status === false) {
-    console.log("Error fetching plans: ", fetchPlansResponse.message);
-    return res
-      .status(400)
-      .send(`Error fetching subscriptions: ${fetchPlansResponse.message}`);
-  }
-
-  return res.status(200).send(fetchPlansResponse.data);
 };
 
 const subscribe = async (req, res) => {
@@ -236,9 +340,9 @@ const handleWebhook = (req, res) => {
     const event = req.body.event;
     if (event === "charge.success") {
       const transactionData = req.body.data;
-      if (transactionData.status == 'success') {
-        let isPaid = true
-        console.log(isPaid)
+      if (transactionData.status == "success") {
+        let isPaid = true;
+        console.log(isPaid);
       }
       console.log("Successful transaction:", transactionData);
     }
@@ -249,7 +353,6 @@ const handleWebhook = (req, res) => {
   }
 };
 
-
 module.exports = {
   createCustomer,
   subscribe,
@@ -257,5 +360,5 @@ module.exports = {
   getPlans,
   userSubscription,
   updatePayment,
-  handleWebhook
+  handleWebhook,
 };
