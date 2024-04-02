@@ -224,11 +224,33 @@ const updatePayment =  async (req, res) => {
   }
 };
 
+
+const webhookController = {
+  handleWebhook: (req, res) => {
+    const hash = req.headers['x-paystack-signature'];
+    const body = JSON.stringify(req.body);
+    const expectedHash = crypto.createHmac('sha512', process.env.paystack_secret_key ).update(body).digest('hex');
+
+    if (hash === expectedHash) {
+      const event = req.body.event;
+      if (event === 'charge.success') {
+        const transactionData = req.body.data;
+        console.log('Successful transaction:', transactionData);
+      }
+      res.status(200).end();
+    } else {
+      console.error('Webhook signature verification failed');
+      res.status(400).end();
+    }
+  }
+};
+
 module.exports = {
   createCustomer,
   subscribe,
   initialPayment,
   getPlans,
   userSubscription,
-  updatePayment
+  updatePayment,
+  webhookController
 };
