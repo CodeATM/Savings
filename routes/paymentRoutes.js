@@ -8,7 +8,7 @@ const {
   getPlans,
   userSubscription,
   updatePayment,
-  webhookController
+  handleWebhook
 } = require("../Controllers/Payment");
 
 // Authentication Routes
@@ -20,6 +20,6 @@ router.get('/subscription', userSubscription)
 router.get('/update-payment-method',  updatePayment)
 
 
-router.post('/webhook', webhookController.handleWebhook);
+router.post('/webhook', handleWebhook);
 
 module.exports = router;

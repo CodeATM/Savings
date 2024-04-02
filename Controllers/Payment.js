@@ -4,15 +4,25 @@ const AppError = require("../utils/ErrorHandler");
 const User = require("../Models/userModel");
 const Paystack = require("@paystack/paystack-sdk");
 // const User = require("../Models/userModel");
-const crypto = require('crypto');
+const crypto = require("crypto");
 
 const paystack = new Paystack(process.env.paystack_secret_key);
 
 const createCustomer = async (req, res) => {
   try {
-
-    let { email, firstname, lastname, address, nextOfKin, montlyplan, datejoined, phone, nextofkinPhone, dob, } = req.body;
-    console.log(req.body)
+    let {
+      email,
+      firstname,
+      lastname,
+      address,
+      nextOfKin,
+      montlyplan,
+      datejoined,
+      phone,
+      nextofkinPhone,
+      dob,
+    } = req.body;
+    console.log(req.body);
 
     if (!email) {
       throw Error("Please include a valid email address");
@@ -22,7 +32,7 @@ const createCustomer = async (req, res) => {
       email,
       first_name: firstname,
       last_name: lastname,
-      phone: phone
+      phone: phone,
     });
 
     if (createCustomerResponse.status === false) {
@@ -40,10 +50,9 @@ const createCustomer = async (req, res) => {
       customerCode: customer.customer_code,
       customerId: customer.id,
     });
-    console.log(user)
-    res.cookie('customer', customer.customer_code);
+    console.log(user);
+    res.cookie("customer", customer.customer_code);
     return res.status(200).send(customer);
-
   } catch (error) {
     console.log(error);
     return res.status(400).send(error.message);
@@ -81,50 +90,43 @@ const createCustomer = async (req, res) => {
 //   }
 // };
 
-
-
-
-
 const initialPayment = async (req, res) => {
   try {
     let { customerCode } = req.body;
 
-    const user = await User.findOne({customerCode: customerCode})
-    console.log(user)
+    const user = await User.findOne({ customerCode: customerCode });
+    console.log(user);
 
     if (!user) {
-      throw Error(
-        'Please provide a valid customer.'
-      );
+      throw Error("Please provide a valid customer.");
     }
 
     let initializeTransactionResponse = await paystack.transaction.initialize({
       email: user.email,
-      amount: 15000*100,
-      channels: ['card'], // limiting the checkout to show card, as it's the only channel that subscriptions are currently available through
+      amount: 15000 * 100,
+      channels: ["card"], // limiting the checkout to show card, as it's the only channel that subscriptions are currently available through
       callback_url: `${process.env.SERVER_URL}/account.html`,
     });
 
     if (initializeTransactionResponse.status === false) {
       return console.log(
-        'Error initializing transaction: ',
+        "Error initializing transaction: ",
         initializeTransactionResponse.message
       );
     }
     let transaction = initializeTransactionResponse.data;
-    console.log(transaction)
+    console.log(transaction);
     return res.status(200).send(transaction);
   } catch (error) {
     return res.status(400).send(error.message);
   }
 };
 
-
-const getPlans =  async (req, res) => {
+const getPlans = async (req, res) => {
   let fetchPlansResponse = await paystack.plan.list({});
 
   if (fetchPlansResponse.status === false) {
-    console.log('Error fetching plans: ', fetchPlansResponse.message);
+    console.log("Error fetching plans: ", fetchPlansResponse.message);
     return res
       .status(400)
       .send(`Error fetching subscriptions: ${fetchPlansResponse.message}`);
@@ -133,31 +135,28 @@ const getPlans =  async (req, res) => {
   return res.status(200).send(fetchPlansResponse.data);
 };
 
-
 const subscribe = async (req, res) => {
   try {
     let { customerCode, amount, plan } = req.body;
 
-    const user = await User.findOne({customerCode: customerCode})
-    console.log(user)
+    const user = await User.findOne({ customerCode: customerCode });
+    console.log(user);
 
     if (!user) {
-      throw Error(
-        'Please provide a valid customer.'
-      );
+      throw Error("Please provide a valid customer.");
     }
 
     let initializeTransactionResponse = await paystack.transaction.initialize({
       email: user.email,
       amount,
       plan,
-      channels: ['card'], // limiting the checkout to show card, as it's the only channel that subscriptions are currently available through
+      channels: ["card"], // limiting the checkout to show card, as it's the only channel that subscriptions are currently available through
       callback_url: `${process.env.SERVER_URL}/account.html`,
     });
 
     if (initializeTransactionResponse.status === false) {
       return console.log(
-        'Error initializing transaction: ',
+        "Error initializing transaction: ",
         initializeTransactionResponse.message
       );
     }
@@ -168,13 +167,12 @@ const subscribe = async (req, res) => {
   }
 };
 
-
 const userSubscription = async (req, res) => {
   try {
     let { customer } = req.query;
 
     if (!customer) {
-      throw Error('Please include a valid customer ID');
+      throw Error("Please include a valid customer ID");
     }
 
     let fetchSubscriptionsResponse = await paystack.subscription.list({
@@ -183,7 +181,7 @@ const userSubscription = async (req, res) => {
 
     if (fetchSubscriptionsResponse.status === false) {
       console.log(
-        'Error fetching subscriptions: ',
+        "Error fetching subscriptions: ",
         fetchSubscriptionsResponse.message
       );
       return res
@@ -195,8 +193,8 @@ const userSubscription = async (req, res) => {
 
     let subscriptions = fetchSubscriptionsResponse.data.filter(
       (subscription) =>
-        subscription.status === 'active' ||
-        subscription.status === 'non-renewing'
+        subscription.status === "active" ||
+        subscription.status === "non-renewing"
     );
 
     return res.status(200).send(subscriptions);
@@ -206,8 +204,7 @@ const userSubscription = async (req, res) => {
   }
 };
 
-
-const updatePayment =  async (req, res) => {
+const updatePayment = async (req, res) => {
   try {
     const { subscription_code } = req.query;
     const manageSubscriptionLinkResponse =
@@ -225,27 +222,26 @@ const updatePayment =  async (req, res) => {
   }
 };
 
+const handleWebhook = (req, res) => {
+  const hash = req.headers["x-paystack-signature"];
+  const body = JSON.stringify(req.body);
+  const expectedHash = crypto
+    .createHmac("sha512", process.env.paystack_secret_key)
+    .update(body)
+    .digest("hex");
 
-const webhookController = {
-  handleWebhook: (req, res) => {
-    const hash = req.headers['x-paystack-signature'];
-    const body = JSON.stringify(req.body);
-    const expectedHash = crypto.createHmac('sha512', process.env.paystack_secret_key ).update(body).digest('hex');
-
-    if (hash === expectedHash) {
-      const event = req.body.event;
-      if (event === 'charge.success') {
-        const transactionData = req.body.data;
-        console.log('Successful transaction:', transactionData);
-      }
-      res.status(200).end();
-    } else {
-      console.error('Webhook signature verification failed');
-      res.status(400).end();
+  if (hash === expectedHash) {
+    const event = req.body.event;
+    if (event === "charge.success") {
+      const transactionData = req.body.data;
+      console.log("Successful transaction:", transactionData);
     }
+    res.status(200).end();
+  } else {
+    console.error("Webhook signature verification failed");
+    res.status(400).end();
   }
 };
-
 module.exports = {
   createCustomer,
   subscribe,
@@ -253,5 +249,5 @@ module.exports = {
   getPlans,
   userSubscription,
   updatePayment,
-  webhookController
+  handleWebhook
 };
