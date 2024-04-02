@@ -18,6 +18,8 @@ router.post("/initial-payment", initialPayment);
 router.get('/plans', getPlans)
 router.get('/subscription', userSubscription)
 router.get('/update-payment-method',  updatePayment)
-router.post('/webhook', webhookController);
+
+
+router.post('/webhook', webhookController.handleWebhook);
 
 module.exports = router;
