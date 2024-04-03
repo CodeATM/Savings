@@ -3,12 +3,10 @@ const AsyncError = require("../utils/CatchAsync");
 const AppError = require("../utils/ErrorHandler");
 const User = require("../Models/userModel");
 const Paystack = require("@paystack/paystack-sdk");
-// const User = require("../Models/userModel");
 const crypto = require("crypto");
-
 const paystack = new Paystack(process.env.paystack_secret_key);
 
-let isPaid = false;
+
 
 const createCustomer = async (req, res) => {
   try {
@@ -45,7 +43,7 @@ const createCustomer = async (req, res) => {
     }
     let customer = createCustomerResponse.data;
 
-    // This is where you would save your customer to your DB. Here, we're mocking that by just storing the customer_code in a cookie
+    // This is where you would save your customer to your DB. Here, we're mocking that by just storing the customer_code in a cookie        
 
     const user = await User.create({
       ...req.body,
@@ -61,8 +59,54 @@ const createCustomer = async (req, res) => {
   }
 };
 
-// const initialPayment = async (req, res) => {
 
+const initialPayment = async (req, res) => {
+  try {
+    let { customerCode } = req.body;
+
+    const user = await User.findOne({ customerCode: customerCode });
+    console.log(user);
+
+    if (!user) {
+      throw Error("Please provide a valid customer.");
+    }
+
+    let initializeTransactionResponse = await paystack.transaction.initialize({
+      email: user.email,
+      amount: 15000 * 100,
+      channels: ["card"], // limiting the checkout to show card, as it's the only channel that subscriptions are currently available through
+      callback_url: `${process.env.SERVER_URL}/account.html`,
+    });
+
+    if (initializeTransactionResponse.status === false) {
+      return console.log(
+        "Error initializing transaction:",
+        initializeTransactionResponse.message
+      );
+    }
+    let transaction = initializeTransactionResponse.data;
+    console.log(transaction);
+    return res.status(200).send(transaction);
+  } catch (error) {
+    return res.status(400).send(error.message);
+  }
+};
+
+
+const getPlans = async (req, res) => {
+  let fetchPlansResponse = await paystack.plan.list({});
+
+  if (fetchPlansResponse.status === false) {
+    console.log("Error fetching plans: ", fetchPlansResponse.message);
+    return res
+      .status(400)
+      .send(`Error fetching subscriptions: ${fetchPlansResponse.message}`);
+  }
+
+  return res.status(200).send(fetchPlansResponse.data);
+};
+
+// const initialPayment = async (req, res) => {
 //   try {
 //     let { customerCode, amount, plan } = req.body;
 
@@ -81,8 +125,23 @@ const createCustomer = async (req, res) => {
 //       channels: ["card"], // limiting the checkout to show card, as it's the only channel that subscriptions are currently available through
 //       callback_url: `${process.env.SERVER_URL}/account.html`,
 //     });
-//     let suscription = subscriptionRsponse.data
-//     res.status(200).send(suscription);
+
+//     if (!subscriptionRsponse.status) {
+//       // return whatever you want
+//     }
+
+//     /* ONce this part get executed it gives me a response like this*
+//     {
+//       "authorization_url": "https://checkout.paystack.com/1mxj2x1g8l80x6r",
+//        "access_code": "1mxj2x1g8l80x6r",
+//        "reference": "ln2rq546p4"
+//     }   
+    
+//     Which i will have to use in the brower to complete the payment
+
+//     Note: i want to make sure the first transaction goes through but the only way is to use the web hook below to know (handlewebhook function)
+
+// */
 
 //     // then checkout
 //     let initializeTransactionResponse = await paystack.transaction.initialize({
@@ -105,141 +164,6 @@ const createCustomer = async (req, res) => {
 //     return res.status(400).send(error.message);
 //   }
 // };
-
-// const subscribe = async (req, res) => {
-//   try {
-//     let { email, amount, plan } = req.body;
-
-//     if (!email || !amount || !plan) {
-//       throw Error(
-//         'Please provide a valid customer email, amount to charge, and plan code'
-//       );
-//     }
-
-//     let initializeTransactionResponse = await paystack.transaction.initialize({
-//       email,
-//       amount,
-//       plan,
-//       channels: ['card'], // limiting the checkout to show card, as it's the only channel that subscriptions are currently available through
-//       callback_url: `${process.env.SERVER_URL}/account.html`,
-//     });
-
-//     if (initializeTransactionResponse.status === false) {
-//       return console.log(
-//         'Error initializing transaction: ',
-//         initializeTransactionResponse.message
-//       );
-//     }
-//     let transaction = initializeTransactionResponse.data;
-//     return res.status(200).send(transaction);
-//   } catch (error) {
-//     return res.status(400).send(error.message);
-//   }
-// };
-
-// const initialPayment = async (req, res) => {
-//   try {
-//     let { customerCode } = req.body;
-
-//     const user = await User.findOne({ customerCode: customerCode });
-//     console.log(user);
-
-//     if (!user) {
-//       throw Error("Please provide a valid customer.");
-//     }
-
-//     let initializeTransactionResponse = await paystack.transaction.initialize({
-//       email: user.email,
-//       amount: 15000 * 100,
-//       channels: ["card"], // limiting the checkout to show card, as it's the only channel that subscriptions are currently available through
-//       callback_url: `${process.env.SERVER_URL}/account.html`,
-//     });
-
-//     if (initializeTransactionResponse.status === false) {
-//       return console.log(
-//         "Error initializing transaction:",
-//         initializeTransactionResponse.message
-//       );
-//     }
-//     let transaction = initializeTransactionResponse.data;
-//     console.log(transaction);
-//     return res.status(200).send(transaction);
-//   } catch (error) {
-//     return res.status(400).send(error.message);
-//   }
-// };
-
-const getPlans = async (req, res) => {
-  let fetchPlansResponse = await paystack.plan.list({});
-
-  if (fetchPlansResponse.status === false) {
-    console.log("Error fetching plans: ", fetchPlansResponse.message);
-    return res
-      .status(400)
-      .send(`Error fetching subscriptions: ${fetchPlansResponse.message}`);
-  }
-
-  return res.status(200).send(fetchPlansResponse.data);
-};
-
-const initialPayment = async (req, res) => {
-  try {
-    let { customerCode, amount, plan } = req.body;
-
-    const user = await User.findOne({ customerCode: customerCode });
-    console.log(user);
-
-    if (!user) {
-      throw Error("Please provide a valid customer.");
-    }
-
-    // subscribe
-    let subscriptionRsponse = await paystack.transaction.initialize({
-      email: user.email,
-      amount,
-      plan,
-      channels: ["card"], // limiting the checkout to show card, as it's the only channel that subscriptions are currently available through
-      callback_url: `${process.env.SERVER_URL}/account.html`,
-    });
-
-    if (!subscriptionRsponse.status) {
-      // return whatever you want
-    }
-
-    /* ONce this part get executed it gives me a response like this
-    {
-      "authorization_url": "https://checkout.paystack.com/1mxj2x1g8l80x6r",
-       "access_code": "1mxj2x1g8l80x6r",
-       "reference": "ln2rq546p4"
-    }   
-    
-    Which i will have to use in the brower to complete the payment
-
-    Note: i want to make sure the first transaction goes through but the only way is to use the web hook below to know (handlewebhook function)
-
-*/
-
-    // then checkout
-    let initializeTransactionResponse = await paystack.transaction.initialize({
-      email: user.email,
-      amount: 15000 * 100,
-      channels: ["card"], // limiting the checkout to show card, as it's the only channel that subscriptions are currently available through
-      callback_url: `${process.env.SERVER_URL}/account.html`,
-    });
-
-    if (initializeTransactionResponse.status === false) {
-      return console.log(
-        "Error initializing transaction:",
-        initializeTransactionResponse.message
-      );
-    }
-    let transaction = initializeTransactionResponse.data;
-    console.log(transaction);
-    return res.status(200).send(transaction);
-  } catch (error) {
-    return res.status(400).send(error.message);
-  }
-};
 
 const subscribe = async (req, res) => {
   try {
