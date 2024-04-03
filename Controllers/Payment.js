@@ -7,7 +7,6 @@ const crypto = require("crypto");
 const paystack = new Paystack(process.env.paystack_secret_key);
 
 
-
 const createCustomer = async (req, res) => {
   try {
     let {
@@ -45,12 +44,12 @@ const createCustomer = async (req, res) => {
 
     // This is where you would save your customer to your DB. Here, we're mocking that by just storing the customer_code in a cookie        
 
-    const user = await User.create({
-      ...req.body,
-      customerCode: customer.customer_code,
-      customerId: customer.id,
-    });
-    console.log(user);
+    // const user = await User.create({
+    //   ...req.body,
+    //   customerCode: customer.customer_code,
+    //   customerId: customer.id,
+    // });
+    // console.log(user);
     res.cookie("customer", customer.customer_code);
     return res.status(200).send(customer);
   } catch (error) {
