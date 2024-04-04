@@ -12,7 +12,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       const dob = document.getElementById("dob").value;
       const nextofkin = document.getElementById("nextofkin").value;
       const nextofkinPhone = document.getElementById("nextofkinPhone").value;
-      console.log({email,firstname, lastname, phone, address, dob, nextofkin, nextofkinPhone})
+      console.log({email,firstname, lastname, phone, address, nextofkin, nextofkinPhone})
 
       const customer = await fetch("/payment/create-customer", {
         method: "post",
@@ -24,8 +24,7 @@ window.addEventListener("DOMContentLoaded", async () => {
           firstname, 
           lastname, 
           phone, 
-          address, 
-          dob, 
+          address,  
           nextofkin, 
           nextofkinPhone
         }),
