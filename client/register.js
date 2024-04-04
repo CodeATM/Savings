@@ -9,7 +9,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       const lastname = document.getElementById("lastname").value;
       const phone = document.getElementById("phone").value;
       const address = document.getElementById("address").value;
-      const dob = document.getElementById("dob").value;
+      // const dob = document.getElementById("dob").value;
       const nextofkin = document.getElementById("nextofkin").value;
       const nextofkinPhone = document.getElementById("nextofkinPhone").value;
       console.log({email,firstname, lastname, phone, address, nextofkin, nextofkinPhone})
